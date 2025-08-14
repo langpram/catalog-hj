@@ -21,7 +21,7 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           protocol: ftp
           local-dir: ./ # folder lokal yang mau diupload
-          server-dir: /public_html/ # folder tujuan di cPanel
+          server-dir: /hjkarpet.com/deployuser/
           exclude: |
             **/.git*
             **/.git*/**
