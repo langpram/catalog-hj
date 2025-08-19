@@ -3,7 +3,7 @@ name: Deploy to cPanel via FTP
 on:
   push:
     branches:
-      - master # jalan setiap push ke branch master
+      - master
 
 jobs:
   ftp-deploy:
@@ -20,8 +20,8 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
           protocol: ftp
-          local-dir: ./public/  # Tambah slash
-          server-dir: /public_html/hjkarpet.com/deployuser/public_html/  # Tambah slash
+          local-dir: ./public/
+          server-dir: /public_html/catalog.hjkarpet.com/  # Ubah ke catalog
           exclude: |
             **/.git*
             **/.git*/**
