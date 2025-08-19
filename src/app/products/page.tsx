@@ -21,20 +21,21 @@ function CategoryCard({ name, imageUrl }: { name: string; imageUrl: string }) {
   return (
     <Link
       href={`/products/${slug}`}
-      className="group relative block overflow-hidden rounded-lg"
+      className="group relative block overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
     >
-      <Image
-        src={imageUrl}
-        alt={`Gambar untuk kategori ${name}`}
-        width={400}
-        height={400}
-        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-      />
-      <div className="absolute inset-0 bg-black/50"></div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <h2 className="text-2xl font-bold text-white tracking-wider uppercase text-center p-4">
-          {name}
-        </h2>
+      <div className="aspect-square relative">
+        <Image
+          src={imageUrl}
+          alt={`Gambar untuk kategori ${name}`}
+          fill
+          className="object-cover transition-transform duration-300 group-hover:scale-110"
+        />
+        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300"></div>
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-white tracking-wider uppercase text-center leading-tight">
+            {name}
+          </h2>
+        </div>
       </div>
     </Link>
   );
@@ -104,6 +105,32 @@ export default function CategoryPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
+      {/* Navbar dengan Logo */}
+      <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center space-x-2">
+                <Image
+                  src="/icons/logo.png"
+                  alt="Logo"
+                  width={120}
+                  height={120}
+                  
+                />
+              </Link>
+            </div>
+            {/* Bisa tambahin menu lain di sini */}
+            <div className="hidden md:block">
+              <div className="ml-10 flex items-baseline space-x-4">
+                {/* Menu items bisa ditambahin di sini */}
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Banner Section */}
       <header className="p-4 md:p-6 lg:p-8">
         {banners.length > 0 ? (
           <Carousel opts={{ loop: true }} className="w-full max-w-6xl mx-auto">
@@ -132,21 +159,31 @@ export default function CategoryPage() {
         )}
       </header>
 
+      {/* Categories Grid */}
       <main className="p-4 md:p-6 lg:p-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {categories.length > 0 ? (
-            categories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                name={category.name}
-                imageUrl={category.imageUrl}
-              />
-            ))
-          ) : (
-            <p className="col-span-full text-center text-gray-500">
-              Kategori tidak ditemukan.
-            </p>
-          )}
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+            Kategori Produk
+          </h1>
+          
+          {/* Grid yang lebih clean - Mobile: 2 kolom, Tablet: 3 kolom, Desktop: 4 kolom */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {categories.length > 0 ? (
+              categories.map((category) => (
+                <CategoryCard
+                  key={category.id}
+                  name={category.name}
+                  imageUrl={category.imageUrl}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-gray-500 text-lg">
+                  Kategori tidak ditemukan.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

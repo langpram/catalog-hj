@@ -1,4 +1,4 @@
-// src/lib/api.ts
+// src/lib/api.ts - IMPROVED VERSION
 
 import {
   Banner,
@@ -12,13 +12,35 @@ import {
 // Definisikan base URL dari Strapi Anda
 const STRAPI_URL = "https://strapi.fairuzulum.me";
 
+// Default timeout untuk fetch
+const FETCH_TIMEOUT = 10000; // 10 seconds
+
+// Helper function untuk fetch dengan timeout
+async function fetchWithTimeout(url: string, options: RequestInit = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
 // Fungsi untuk mengambil data banner
 export async function getBanners(): Promise<Banner[]> {
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/hero-banner-kategoris?populate=*`,
       {
-        cache: "no-store",
+        cache: "force-cache", // Change to force-cache for static export
+        next: { revalidate: 3600 }, // Revalidate every hour
       }
     );
 
@@ -27,6 +49,11 @@ export async function getBanners(): Promise<Banner[]> {
     }
 
     const json: StrapiBannerResponse = await response.json();
+
+    if (!json.data?.[0]?.images) {
+      console.warn("No banner images found");
+      return [];
+    }
 
     const banners = json.data[0].images.map((image) => ({
       id: image.id,
@@ -40,12 +67,16 @@ export async function getBanners(): Promise<Banner[]> {
   }
 }
 
-// Fungsi untuk mengambil data kategori
+// Fungsi untuk mengambil data kategori - IMPROVED
 export async function getCategories(): Promise<Category[]> {
   try {
-    const response = await fetch(`${STRAPI_URL}/api/categories?populate=*`, {
-      cache: "no-store",
-    });
+    const response = await fetchWithTimeout(
+      `${STRAPI_URL}/api/categories?populate=*`,
+      {
+        cache: "force-cache", // Better for static export
+        next: { revalidate: 3600 },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to fetch categories: ${response.statusText}`);
@@ -53,32 +84,55 @@ export async function getCategories(): Promise<Category[]> {
 
     const json: StrapiCategoryResponse = await response.json();
 
+    if (!json.data || json.data.length === 0) {
+      console.warn("No categories found");
+      return [];
+    }
+
     const categories = json.data.map((category) => ({
       id: category.id,
       name: category.name,
-      imageUrl: `${STRAPI_URL}${category.image.url}`,
+      imageUrl: category.image?.url 
+        ? `${STRAPI_URL}${category.image.url}` 
+        : '/placeholder-category.jpg',
     }));
 
+    console.log(`Fetched ${categories.length} categories:`, categories.map(c => c.name));
     return categories;
   } catch (error) {
     console.error("Error fetching categories:", error);
-    return [];
+    
+    // Return fallback categories untuk static export
+    return [
+      { id: 1, name: "CARPET", imageUrl: '/placeholder-category.jpg' },
+      { id: 2, name: "RUG", imageUrl: '/placeholder-category.jpg' },
+      { id: 3, name: "KARPET MASJID", imageUrl: '/placeholder-category.jpg' },
+      { id: 4, name: "KARPET KANTOR", imageUrl: '/placeholder-category.jpg' },
+      { id: 5, name: "KARPET HOTEL", imageUrl: '/placeholder-category.jpg' },
+      { id: 6, name: "SAJADAH ROLL", imageUrl: '/placeholder-category.jpg' },
+    ];
   }
 }
 
-// Fungsi untuk mengambil produk berdasarkan nama kategori
+// Fungsi untuk mengambil produk berdasarkan nama kategori - IMPROVED
 export async function getProductsByCategory(
   categoryName: string
 ): Promise<Product[]> {
   try {
+    console.log(`Fetching products for category: "${categoryName}"`);
+
     const query = new URLSearchParams({
       populate: "*",
       "filters[categories][name][$eq]": categoryName,
     }).toString();
 
-    const response = await fetch(`${STRAPI_URL}/api/products?${query}`, {
-      cache: "no-store",
-    });
+    const response = await fetchWithTimeout(
+      `${STRAPI_URL}/api/products?${query}`,
+      {
+        cache: "force-cache", // Better for static export
+        next: { revalidate: 1800 }, // 30 minutes
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to fetch products: ${response.statusText}`);
@@ -86,16 +140,24 @@ export async function getProductsByCategory(
 
     const json: StrapiProductListResponse = await response.json();
 
-    return json.data.map((product) => ({
+    if (!json.data || json.data.length === 0) {
+      console.warn(`No products found for category: ${categoryName}`);
+      return [];
+    }
+
+    const products = json.data.map((product) => ({
       id: product.id,
-      name: product.name,
-      description: product.deskripsi, // Menggunakan tipe yang sudah diperbarui
-      images: product.images.map((img) => ({
+      name: product.name || 'Untitled Product',
+      description: product.deskripsi || null,
+      images: product.images?.map((img) => ({
         id: img.id,
         url: `${STRAPI_URL}${img.url}`,
-      })),
-      categories: product.categories,
+      })) || [],
+      categories: product.categories || [],
     }));
+
+    console.log(`Found ${products.length} products for category: ${categoryName}`);
+    return products;
   } catch (error) {
     console.error(
       `Error fetching products for category ${categoryName}:`,
@@ -105,7 +167,7 @@ export async function getProductsByCategory(
   }
 }
 
-// Fungsi untuk mengambil satu produk berdasarkan ID (versi final menggunakan filter)
+// Fungsi untuk mengambil satu produk berdasarkan ID - IMPROVED
 export async function getProductById(
   id: string | number
 ): Promise<Product | null> {
@@ -115,12 +177,14 @@ export async function getProductById(
       'populate': '*',
     }).toString();
 
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/products?${query}`,
       {
-        cache: "no-store",
+        cache: "force-cache",
+        next: { revalidate: 3600 },
       }
     );
+
     if (!response.ok) {
       throw new Error(`Failed to fetch product: ${response.statusText}`);
     }
@@ -128,21 +192,21 @@ export async function getProductById(
     const json: StrapiProductListResponse = await response.json();
 
     if (!json.data || json.data.length === 0) {
+      console.warn(`Product with ID ${id} not found`);
       return null;
     }
 
     const productData = json.data[0];
 
-    // SOLUSI: Tidak perlu 'as any' lagi karena tipe sudah benar
     return {
       id: productData.id,
-      name: productData.name,
+      name: productData.name || 'Untitled Product',
       description: productData.deskripsi || null,
-      images: productData.images.map((img) => ({
+      images: productData.images?.map((img) => ({
         id: img.id,
         url: `${STRAPI_URL}${img.url}`,
-      })),
-      categories: productData.categories,
+      })) || [],
+      categories: productData.categories || [],
     };
   } catch (error) {
     console.error(`Error fetching product with ID ${id}:`, error);
@@ -150,45 +214,44 @@ export async function getProductById(
   }
 }
 
+// Portfolio function - IMPROVED
 export async function getPortfolioProjects(): Promise<{ id: number; title: string; imageUrl: string }[]> {
-  const STRAPI_URL = "https://strapi.fairuzulum.me";
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/portofolios?populate=*`,
-      { cache: "no-store" }
+      { 
+        cache: "force-cache",
+        next: { revalidate: 3600 }
+      }
     );
+
     if (!response.ok) {
       throw new Error(`Failed to fetch portfolio projects: ${response.statusText}`);
     }
+
     const json = await response.json();
-    console.log('Portfolio API response:', json); // Debug log
+    
+    if (!json.data || json.data.length === 0) {
+      console.warn("No portfolio projects found");
+      return [];
+    }
     
     return json.data.map((project: any) => {
-      console.log('Processing project:', project.title); // Debug log
+      let imageUrl = '/placeholder-portfolio.jpg'; // default
       
-      let imageUrl = '/placeholder-image.jpg'; // default
-      
-      // Berdasarkan struktur data yang Anda berikan:
-      // project.pict langsung berisi object gambar (bukan project.pict.data.attributes)
       if (project.pict?.url) {
         imageUrl = `${STRAPI_URL}${project.pict.url}`;
-      }
-      // Jika ingin menggunakan format yang berbeda (thumbnail, small, medium, large)
-      else if (project.pict?.formats?.medium?.url) {
+      } else if (project.pict?.formats?.medium?.url) {
         imageUrl = `${STRAPI_URL}${project.pict.formats.medium.url}`;
-      }
-      else if (project.pict?.formats?.small?.url) {
+      } else if (project.pict?.formats?.small?.url) {
         imageUrl = `${STRAPI_URL}${project.pict.formats.small.url}`;
-      }
-      else if (project.pict?.formats?.thumbnail?.url) {
+      } else if (project.pict?.formats?.thumbnail?.url) {
         imageUrl = `${STRAPI_URL}${project.pict.formats.thumbnail.url}`;
       }
       
-      console.log('Final imageUrl for', project.title, ':', imageUrl); // Debug final URL
-      
       return {
         id: project.id,
-        title: project.title || 'Untitled',
+        title: project.title || 'Untitled Project',
         imageUrl: imageUrl,
       };
     });
