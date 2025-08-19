@@ -20,8 +20,9 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
           protocol: ftp
-          local-dir: ./public # folder lokal yang mau diupload
-          server-dir: /public_html/hjkarpet.com/deployuser/public_html
+          local-dir: ./public/  # Tambah slash
+          server-dir: /public_html/hjkarpet.com/deployuser/public_html/  # Tambah slash
+          exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
