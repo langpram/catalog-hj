@@ -12,6 +12,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Next.js project
+        run: npm run build
+
       - name: FTP Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.3
         with:
@@ -20,8 +31,8 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
           protocol: ftp
-          local-dir: ./public/
-          server-dir: /public_html/catalog.hjkarpet.com/  # Ubah ke catalog
+          local-dir: ./out/  # Next.js export ke folder 'out'
+          server-dir: /public_html/catalog.hjkarpet.com/
           exclude: |
             **/.git*
             **/.git*/**
