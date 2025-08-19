@@ -8,8 +8,39 @@ import ProductCard from "@/components/ProductCard";
 import { Product } from "@/lib/types";
 import { marked } from "marked";
 
+// Tambah interface buat type API response
+interface ProductApiResponse {
+  data: Array<{
+    id: number;
+    attributes?: unknown;
+  }>;
+}
+
+// Tambah function ini buat static export
+export async function generateStaticParams() {
+  try {
+    // Fetch semua products dari API
+    const response = await fetch(
+      "https://strapi.fairuzulum.me/api/products?pagination[pageSize]=1000"
+    );
+    const data: ProductApiResponse = await response.json();
+
+    return data.data.map((product) => ({
+      id: product.id.toString(), // Convert ke string
+    }));
+  } catch (error) {
+    console.error("Error fetching products for static params:", error);
+    // Return empty array kalau error, jadi gak ada static pages yang dibuat
+    return [];
+  }
+}
+
 //                                       👇 PERUBAHAN DI SINI: params adalah sebuah Promise
-export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const product = await getProductById(id);
 
@@ -33,22 +64,26 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-        
         <BackButton />
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-          <ProductImageGallery images={product.images} productName={product.name} />
+          <ProductImageGallery
+            images={product.images}
+            productName={product.name}
+          />
           <div className="flex flex-col pt-4">
             <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight mb-4">
               {product.name}
             </h1>
             {descriptionHtml ? (
-              <div 
+              <div
                 className="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300"
                 dangerouslySetInnerHTML={{ __html: descriptionHtml }}
               />
             ) : (
-              <p className="text-gray-500 italic">Tidak ada deskripsi untuk produk ini.</p>
+              <p className="text-gray-500 italic">
+                Tidak ada deskripsi untuk produk ini.
+              </p>
             )}
           </div>
         </div>
@@ -65,7 +100,6 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
         )}
-
       </div>
     </div>
   );
