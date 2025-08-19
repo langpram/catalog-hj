@@ -1,6 +1,9 @@
 // src/app/products/page.tsx
+"use client"; // ← Tambah ini
 
 import { getBanners, getCategories } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { Banner, Category } from "@/lib/types";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -12,12 +15,14 @@ import {
 } from "@/components/ui/carousel";
 
 // Komponen Card untuk setiap Kategori
-function CategoryCard({ name, imageUrl }: {name: string; imageUrl: string }) {
-  // Kita akan buat slug dari nama kategori untuk URL, atau bisa gunakan ID
-  const slug = name.toLowerCase().replace(/\s+/g, '-');
+function CategoryCard({ name, imageUrl }: { name: string; imageUrl: string }) {
+  const slug = name.toLowerCase().replace(/\s+/g, "-");
 
   return (
-    <Link href={`/products/${slug}`} className="group relative block overflow-hidden rounded-lg">
+    <Link
+      href={`/products/${slug}`}
+      className="group relative block overflow-hidden rounded-lg"
+    >
       <Image
         src={imageUrl}
         alt={`Gambar untuk kategori ${name}`}
@@ -25,10 +30,7 @@ function CategoryCard({ name, imageUrl }: {name: string; imageUrl: string }) {
         height={400}
         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
       />
-      {/* Overlay hitam transparan */}
       <div className="absolute inset-0 bg-black/50"></div>
-      
-      {/* Nama Kategori */}
       <div className="absolute inset-0 flex items-center justify-center">
         <h2 className="text-2xl font-bold text-white tracking-wider uppercase text-center p-4">
           {name}
@@ -38,22 +40,73 @@ function CategoryCard({ name, imageUrl }: {name: string; imageUrl: string }) {
   );
 }
 
-// Halaman Utama Kategori
-export default async function CategoryPage() {
-  // Ambil data banner dan kategori secara paralel
-  const [banners, categories] = await Promise.all([
-    getBanners(),
-    getCategories(),
-  ]);
+// Halaman Utama Kategori - UBAH JADI CLIENT SIDE
+export default function CategoryPage() {
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        console.log("🔥 Fetching banners and categories...");
+
+        const [bannersData, categoriesData] = await Promise.all([
+          getBanners(),
+          getCategories(),
+        ]);
+
+        console.log("📦 Banners:", bannersData);
+        console.log("📦 Categories:", categoriesData);
+
+        setBanners(bannersData);
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error("❌ Error fetching data:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading products...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <header className="p-4 md:p-6 lg:p-8">
         {banners.length > 0 ? (
-          <Carousel
-            opts={{ loop: true }}
-            className="w-full max-w-6xl mx-auto"
-          >
+          <Carousel opts={{ loop: true }} className="w-full max-w-6xl mx-auto">
             <CarouselContent>
               {banners.map((banner) => (
                 <CarouselItem key={banner.id}>
@@ -63,7 +116,7 @@ export default async function CategoryPage() {
                       alt={`Banner image ${banner.id}`}
                       fill
                       className="object-cover"
-                      priority // Prioritaskan gambar pertama di banner
+                      priority
                     />
                   </div>
                 </CarouselItem>
@@ -90,9 +143,9 @@ export default async function CategoryPage() {
               />
             ))
           ) : (
-             <p className="col-span-full text-center text-gray-500">
-                Kategori tidak ditemukan.
-             </p>
+            <p className="col-span-full text-center text-gray-500">
+              Kategori tidak ditemukan.
+            </p>
           )}
         </div>
       </main>

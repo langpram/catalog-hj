@@ -1,7 +1,63 @@
-import { getPortfolioProjects } from "@/lib/api";
+// src/app/portofolio/page.tsx
+"use client"; // ← Tambah ini
 
-export default async function PortofolioPage() {
-  const projects = await getPortfolioProjects();
+import { getPortfolioProjects } from "@/lib/api";
+import { useState, useEffect } from "react";
+
+export default function PortofolioPage() {
+  const [projects, setProjects] = useState<
+    Array<{ id: number; title: string; imageUrl: string }>
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        console.log("🔥 Fetching portfolio projects...");
+
+        const projectsData = await getPortfolioProjects();
+
+        console.log("📦 Portfolio projects:", projectsData);
+
+        setProjects(projectsData);
+      } catch (err) {
+        console.error("❌ Error fetching portfolio:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProjects();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading portfolio...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-4 sm:px-6">
@@ -11,7 +67,8 @@ export default async function PortofolioPage() {
           Portofolio
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          Kumpulan proyek kreatif yang telah saya kerjakan dengan penuh dedikasi dan passion.
+          Kumpulan proyek kreatif yang telah saya kerjakan dengan penuh dedikasi
+          dan passion.
         </p>
       </div>
 
@@ -30,24 +87,24 @@ export default async function PortofolioPage() {
                   alt={project.title}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                
+
                 {/* Overlay - always visible */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                
+
                 {/* Title overlay - always visible */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
                   <h2 className="text-white font-bold text-lg sm:text-xl lg:text-2xl drop-shadow-lg leading-tight">
                     {project.title}
                   </h2>
-                  
+
                   {/* Decorative element - always visible */}
                   <div className="w-12 h-1 bg-white/60 mt-2" />
                 </div>
-                
+
                 {/* Corner accent - always visible */}
                 <div className="absolute top-4 right-4 w-3 h-3 bg-white/30 rounded-full" />
               </div>
-              
+
               {/* Subtle border effect - always visible */}
               <div className="absolute inset-0 rounded-2xl lg:rounded-3xl ring-1 ring-black/10" />
             </div>
@@ -59,12 +116,27 @@ export default async function PortofolioPage() {
       {projects.length === 0 && (
         <div className="max-w-2xl mx-auto text-center py-16">
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-200 flex items-center justify-center">
-            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            <svg
+              className="w-10 h-10 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
             </svg>
           </div>
-          <h3 className="text-2xl font-semibold text-gray-900 mb-2">Belum Ada Proyek</h3>
-          <p className="text-gray-600">Portfolio sedang dalam tahap pengembangan. Silakan kembali lagi nanti!</p>
+          <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+            Belum Ada Proyek
+          </h3>
+          <p className="text-gray-600">
+            Portfolio sedang dalam tahap pengembangan. Silakan kembali lagi
+            nanti!
+          </p>
         </div>
       )}
     </div>
