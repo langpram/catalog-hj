@@ -73,10 +73,10 @@ export async function generateMetadata({
   const categoryName = formatCategoryName(slug);
 
   return {
-    title: `${categoryName} - Fairuz Ulum`,
-    description: `Koleksi ${categoryName.toLowerCase()} berkualitas tinggi dari Fairuz Ulum. Temukan produk terbaik untuk kebutuhan Anda.`,
+    title: `${categoryName} - HJKARPET`,
+    description: `Koleksi ${categoryName.toLowerCase()} berkualitas tinggi dari HJKARPET. Temukan produk terbaik untuk kebutuhan Anda.`,
     openGraph: {
-      title: `${categoryName} - Fairuz Ulum`,
+      title: `${categoryName} - HJKARPET`,
       description: `Koleksi ${categoryName.toLowerCase()} berkualitas tinggi`,
       type: "website",
     },

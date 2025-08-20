@@ -25,6 +25,16 @@ export default function LandingPage() {
           Portfolio
         </Button>
         </Link>
+         {/* Tombol Portfolio bisa ditambahkan linknya nanti
+         <Link href="/portofolio">
+        <Button
+          size="lg"
+        className="w-64 h-20 text-2xl font-bold bg-green-600 hover:bg-green-700 text-white"
+          // disabled // non-aktifkan sementara
+        >
+          Sync Data
+        </Button>
+        </Link> */}
       </div>
     </main>
   );

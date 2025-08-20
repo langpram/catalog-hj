@@ -20,12 +20,12 @@ const nunitoSans = Nunito_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "HJKARPET - Karpet & Interior",
+  title: "HJKARPET - Katalog",
   description: "Supplier karpet berkualitas tinggi untuk masjid, kantor, hotel, dan kebutuhan interior lainnya.",
   keywords: "karpet, karpet masjid, karpet kantor, karpet hotel, interior, sajadah",
-  authors: [{ name: "Fairuz Ulum" }],
+  authors: [{ name: "HJKARPET" }],
   openGraph: {
-    title: "HJKARPET - Karpet & Interior",
+    title: "HJKARPET - Katalog",
     description: "Supplier karpet berkualitas tinggi untuk masjid, kantor, hotel, dan kebutuhan interior lainnya.",
     type: "website",
     locale: "id_ID",
