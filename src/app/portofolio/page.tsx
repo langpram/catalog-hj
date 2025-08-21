@@ -67,7 +67,7 @@ export default function PortofolioPage() {
           Portofolio
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          Kumpulan proyek kreatif yang telah saya kerjakan dengan penuh dedikasi
+          Kumpulan proyek kreatif yang telah kami kerjakan dengan penuh dedikasi
           dan passion.
         </p>
       </div>

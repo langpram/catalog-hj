@@ -1,11 +1,11 @@
 // src/components/ProductPageHeader.tsx
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { ChevronLeft, Home, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import Link from 'next/link';
+import { useRouter } from "next/navigation";
+import { ChevronLeft, Home, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 // Definisikan tipe untuk props
 interface ProductPageHeaderProps {
@@ -14,10 +14,10 @@ interface ProductPageHeaderProps {
   onSearchChange: (value: string) => void;
 }
 
-export default function ProductPageHeader({ 
-  categoryName, 
-  searchValue, 
-  onSearchChange 
+export default function ProductPageHeader({
+  categoryName,
+  searchValue,
+  onSearchChange,
 }: ProductPageHeaderProps) {
   const router = useRouter();
 
@@ -42,9 +42,12 @@ export default function ProductPageHeader({
         </div>
 
         {/* Kanan: Tombol Kembali */}
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ChevronLeft className="h-6 w-6" />
-          <span className="sr-only">Kembali</span>
+        <Button
+          onClick={() => router.back()}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Kembali
         </Button>
       </div>
     </header>

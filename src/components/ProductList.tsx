@@ -1,28 +1,27 @@
 // src/components/ProductList.tsx
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { Product } from '@/lib/types';
-import ProductPageHeader from './ProductPageHeader';
-import ProductCard from './ProductCard';
+import { useState, useMemo } from "react";
+import { Product } from "@/lib/types";
+import ProductPageHeader from "./ProductPageHeader";
+import ProductCard from "./ProductCard";
 
 interface ProductListProps {
   initialProducts: Product[];
   categoryName: string;
 }
 
-export default function ProductList({ initialProducts, categoryName }: ProductListProps) {
-  // State untuk menyimpan query pencarian dari user
-  const [searchQuery, setSearchQuery] = useState('');
+export default function ProductList({
+  initialProducts,
+  categoryName,
+}: ProductListProps) {
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Memfilter produk berdasarkan searchQuery
-  // useMemo digunakan agar proses filter tidak diulang pada setiap render,
-  // hanya jika initialProducts atau searchQuery berubah.
   const filteredProducts = useMemo(() => {
     if (!searchQuery) {
       return initialProducts;
     }
-    return initialProducts.filter(product =>
+    return initialProducts.filter((product) =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [initialProducts, searchQuery]);
@@ -34,24 +33,45 @@ export default function ProductList({ initialProducts, categoryName }: ProductLi
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
       />
-      
+
       <main className="p-4 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">
+          <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white text-center">
             Produk Kategori: {categoryName}
           </h1>
-          
+
+          {/* Info hasil pencarian */}
+          {searchQuery && (
+            <div className="mb-6 text-center">
+              <p className="text-gray-600 dark:text-gray-400">
+                {filteredProducts.length > 0
+                  ? `Menampilkan ${filteredProducts.length} produk untuk "${searchQuery}"`
+                  : `Tidak ada produk yang ditemukan untuk "${searchQuery}"`}
+              </p>
+            </div>
+          )}
+
           {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 md:gap-6">
               {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           ) : (
             <div className="text-center py-20">
-              <p className="text-lg text-gray-500">
-                Produk tidak ditemukan untuk pencarian {searchQuery}.
+              <p className="text-lg text-gray-500 dark:text-gray-400">
+                {searchQuery
+                  ? `Produk tidak ditemukan untuk pencarian "${searchQuery}".`
+                  : "Produk tidak ditemukan untuk kategori ini."}
               </p>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Tampilkan Semua Produk
+                </button>
+              )}
             </div>
           )}
         </div>
