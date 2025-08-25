@@ -1,4 +1,4 @@
-// src/lib/api.ts - IMPROVED VERSION
+// src/lib/api.ts - FRESH DATA VERSION
 
 import {
   Banner,
@@ -39,8 +39,7 @@ export async function getBanners(): Promise<Banner[]> {
     const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/hero-banner-kategoris?populate=*`,
       {
-        cache: "force-cache", // Change to force-cache for static export
-        next: { revalidate: 3600 }, // Revalidate every hour
+        next: { revalidate: 300 }, // Revalidate setiap 5 menit
       }
     );
 
@@ -67,14 +66,13 @@ export async function getBanners(): Promise<Banner[]> {
   }
 }
 
-// Fungsi untuk mengambil data kategori - IMPROVED
+// Fungsi untuk mengambil data kategori - FRESH DATA
 export async function getCategories(): Promise<Category[]> {
   try {
     const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/categories?populate=*`,
       {
-        cache: "force-cache", // Better for static export
-        next: { revalidate: 3600 },
+        next: { revalidate: 300 }, // Revalidate setiap 5 menit
       }
     );
 
@@ -92,29 +90,32 @@ export async function getCategories(): Promise<Category[]> {
     const categories = json.data.map((category) => ({
       id: category.id,
       name: category.name,
-      imageUrl: category.image?.url 
-        ? `${STRAPI_URL}${category.image.url}` 
-        : '/placeholder-category.jpg',
+      imageUrl: category.image?.url
+        ? `${STRAPI_URL}${category.image.url}`
+        : "/placeholder-category.jpg",
     }));
 
-    console.log(`Fetched ${categories.length} categories:`, categories.map(c => c.name));
+    console.log(
+      `Fetched ${categories.length} categories:`,
+      categories.map((c) => c.name)
+    );
     return categories;
   } catch (error) {
     console.error("Error fetching categories:", error);
-    
-    // Return fallback categories untuk static export
+
+    // Return fallback categories untuk error handling
     return [
-      { id: 1, name: "CARPET", imageUrl: '/placeholder-category.jpg' },
-      { id: 2, name: "RUG", imageUrl: '/placeholder-category.jpg' },
-      { id: 3, name: "KARPET MASJID", imageUrl: '/placeholder-category.jpg' },
-      { id: 4, name: "KARPET KANTOR", imageUrl: '/placeholder-category.jpg' },
-      { id: 5, name: "KARPET HOTEL", imageUrl: '/placeholder-category.jpg' },
-      { id: 6, name: "SAJADAH ROLL", imageUrl: '/placeholder-category.jpg' },
+      { id: 1, name: "CARPET", imageUrl: "/placeholder-category.jpg" },
+      { id: 2, name: "RUG", imageUrl: "/placeholder-category.jpg" },
+      { id: 3, name: "KARPET MASJID", imageUrl: "/placeholder-category.jpg" },
+      { id: 4, name: "KARPET KANTOR", imageUrl: "/placeholder-category.jpg" },
+      { id: 5, name: "KARPET HOTEL", imageUrl: "/placeholder-category.jpg" },
+      { id: 6, name: "SAJADAH ROLL", imageUrl: "/placeholder-category.jpg" },
     ];
   }
 }
 
-// Fungsi untuk mengambil produk berdasarkan nama kategori - IMPROVED
+// Fungsi untuk mengambil produk berdasarkan nama kategori - FRESH DATA
 export async function getProductsByCategory(
   categoryName: string
 ): Promise<Product[]> {
@@ -129,8 +130,7 @@ export async function getProductsByCategory(
     const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/products?${query}`,
       {
-        cache: "force-cache", // Better for static export
-        next: { revalidate: 1800 }, // 30 minutes
+        next: { revalidate: 60 }, // Revalidate setiap 1 menit untuk products
       }
     );
 
@@ -147,16 +147,19 @@ export async function getProductsByCategory(
 
     const products = json.data.map((product) => ({
       id: product.id,
-      name: product.name || 'Untitled Product',
+      name: product.name || "Untitled Product",
       description: product.deskripsi || null,
-      images: product.images?.map((img) => ({
-        id: img.id,
-        url: `${STRAPI_URL}${img.url}`,
-      })) || [],
+      images:
+        product.images?.map((img) => ({
+          id: img.id,
+          url: `${STRAPI_URL}${img.url}`,
+        })) || [],
       categories: product.categories || [],
     }));
 
-    console.log(`Found ${products.length} products for category: ${categoryName}`);
+    console.log(
+      `Found ${products.length} products for category: ${categoryName}`
+    );
     return products;
   } catch (error) {
     console.error(
@@ -167,21 +170,20 @@ export async function getProductsByCategory(
   }
 }
 
-// Fungsi untuk mengambil satu produk berdasarkan ID - IMPROVED
+// Fungsi untuk mengambil satu produk berdasarkan ID - FRESH DATA
 export async function getProductById(
   id: string | number
 ): Promise<Product | null> {
   try {
     const query = new URLSearchParams({
-      'filters[id][$eq]': String(id),
-      'populate': '*',
+      "filters[id][$eq]": String(id),
+      populate: "*",
     }).toString();
 
     const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/products?${query}`,
       {
-        cache: "force-cache",
-        next: { revalidate: 3600 },
+        next: { revalidate: 300 }, // Revalidate setiap 5 menit
       }
     );
 
@@ -200,12 +202,13 @@ export async function getProductById(
 
     return {
       id: productData.id,
-      name: productData.name || 'Untitled Product',
+      name: productData.name || "Untitled Product",
       description: productData.deskripsi || null,
-      images: productData.images?.map((img) => ({
-        id: img.id,
-        url: `${STRAPI_URL}${img.url}`,
-      })) || [],
+      images:
+        productData.images?.map((img) => ({
+          id: img.id,
+          url: `${STRAPI_URL}${img.url}`,
+        })) || [],
       categories: productData.categories || [],
     };
   } catch (error) {
@@ -214,31 +217,34 @@ export async function getProductById(
   }
 }
 
-// Portfolio function - IMPROVED
-export async function getPortfolioProjects(): Promise<{ id: number; title: string; imageUrl: string }[]> {
+// Portfolio function - FRESH DATA
+export async function getPortfolioProjects(): Promise<
+  { id: number; title: string; imageUrl: string }[]
+> {
   try {
     const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/portofolios?populate=*`,
-      { 
-        cache: "force-cache",
-        next: { revalidate: 3600 }
+      {
+        next: { revalidate: 600 }, // Revalidate setiap 10 menit
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch portfolio projects: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch portfolio projects: ${response.statusText}`
+      );
     }
 
     const json = await response.json();
-    
+
     if (!json.data || json.data.length === 0) {
       console.warn("No portfolio projects found");
       return [];
     }
-    
+
     return json.data.map((project: any) => {
-      let imageUrl = '/placeholder-portfolio.jpg'; // default
-      
+      let imageUrl = "/placeholder-portfolio.jpg"; // default
+
       if (project.pict?.url) {
         imageUrl = `${STRAPI_URL}${project.pict.url}`;
       } else if (project.pict?.formats?.medium?.url) {
@@ -248,10 +254,10 @@ export async function getPortfolioProjects(): Promise<{ id: number; title: strin
       } else if (project.pict?.formats?.thumbnail?.url) {
         imageUrl = `${STRAPI_URL}${project.pict.formats.thumbnail.url}`;
       }
-      
+
       return {
         id: project.id,
-        title: project.title || 'Untitled Project',
+        title: project.title || "Untitled Project",
         imageUrl: imageUrl,
       };
     });

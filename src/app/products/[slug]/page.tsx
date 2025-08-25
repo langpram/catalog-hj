@@ -18,7 +18,7 @@ export async function generateStaticParams() {
   try {
     // Ambil kategori dari Strapi
     const categories = await getCategories();
-    
+
     // Convert nama kategori jadi slug
     const categoryParams = categories.map((category) => ({
       slug: slugify(category.name),
@@ -27,9 +27,9 @@ export async function generateStaticParams() {
     // Fallback manual kalau API gagal
     const fallbackCategories = [
       "carpet",
-      "rug", 
+      "rug",
       "karpet-masjid",
-      "karpet-kantor", 
+      "karpet-kantor",
       "karpet-hotel",
       "sajadah-roll",
     ];
@@ -37,20 +37,20 @@ export async function generateStaticParams() {
     // Combine API results dengan fallback
     const allSlugs = [
       ...categoryParams,
-      ...fallbackCategories.map(slug => ({ slug }))
+      ...fallbackCategories.map((slug) => ({ slug })),
     ];
 
     // Remove duplicates
-    const uniqueSlugs = allSlugs.filter((item, index, self) => 
-      index === self.findIndex(t => t.slug === item.slug)
+    const uniqueSlugs = allSlugs.filter(
+      (item, index, self) =>
+        index === self.findIndex((t) => t.slug === item.slug)
     );
 
-    console.log('Generated static params:', uniqueSlugs);
+    console.log("Generated static params:", uniqueSlugs);
     return uniqueSlugs;
-
   } catch (error) {
-    console.error('Error in generateStaticParams:', error);
-    
+    console.error("Error in generateStaticParams:", error);
+
     // Fallback ke kategori manual
     return [
       { slug: "carpet" },
@@ -83,7 +83,7 @@ export async function generateMetadata({
   };
 }
 
-// Disable dynamic params untuk static export
+// Keep static params untuk static export
 export const dynamicParams = false;
 
 export default async function ProductListPage({
@@ -92,27 +92,30 @@ export default async function ProductListPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  
+
   try {
     const categoryName = formatCategoryName(slug);
     console.log(`Fetching products for category: ${categoryName}`);
-    
+
     const allProducts = await getProductsByCategory(categoryName);
-    
+
     // Kalau tidak ada produk, tetap render tapi dengan empty state
     if (!allProducts || allProducts.length === 0) {
       console.warn(`No products found for category: ${categoryName}`);
-      
+
       return (
         <div className="container mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold mb-8">{categoryName}</h1>
           <div className="text-center py-12">
-            <h2 className="text-xl font-semibold mb-4">Produk Tidak Ditemukan</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              Produk Tidak Ditemukan
+            </h2>
             <p className="text-gray-600 mb-6">
-              Maaf, saat ini tidak ada produk dalam kategori {categoryName.toLowerCase()}.
+              Maaf, saat ini tidak ada produk dalam kategori{" "}
+              {categoryName.toLowerCase()}.
             </p>
-            <a 
-              href="/products" 
+            <a
+              href="/products"
               className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Lihat Semua Produk
@@ -123,15 +126,11 @@ export default async function ProductListPage({
     }
 
     return (
-      <ProductList 
-        initialProducts={allProducts} 
-        categoryName={categoryName} 
-      />
+      <ProductList initialProducts={allProducts} categoryName={categoryName} />
     );
-
   } catch (error) {
     console.error(`Error in ProductListPage for slug ${slug}:`, error);
-    
+
     // Redirect ke 404 kalau ada error
     notFound();
   }
