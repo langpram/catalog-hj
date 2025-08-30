@@ -1,38 +1,15 @@
 // src/app/portofolio/page.tsx
-"use client"; // ← Tambah ini
+"use client";
 
-import { getPortfolioProjects } from "@/lib/api";
-import { useState, useEffect } from "react";
+import { useOfflineData } from "@/hooks/useOfflineData";
 
 export default function PortofolioPage() {
-  const [projects, setProjects] = useState<
-    Array<{ id: number; title: string; imageUrl: string }>
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: offlineData, isLoading, error, isOnline } = useOfflineData();
+  
+  // Menggunakan data portfolio dari offline storage
+  const projects = offlineData?.portfolios || [];
 
-  useEffect(() => {
-    async function fetchProjects() {
-      try {
-        console.log("🔥 Fetching portfolio projects...");
-
-        const projectsData = await getPortfolioProjects();
-
-        console.log("📦 Portfolio projects:", projectsData);
-
-        setProjects(projectsData);
-      } catch (err) {
-        console.error("❌ Error fetching portfolio:", err);
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProjects();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">

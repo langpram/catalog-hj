@@ -1,20 +1,12 @@
 import type { NextConfig } from "next";
-import withPWAInit from "@ducanh2912/next-pwa";
-
-const withPWA = withPWAInit({
-  dest: "public",
-  register: true,
-  disable: process.env.NODE_ENV === "development",
-});
 
 const nextConfig: NextConfig = {
-  output: "export",
-  trailingSlash: true,
+  // Remove output: "export" to support dynamic routes
   eslint: {
-    ignoreDuringBuilds: true, // Tambah ini
+    ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true, // Tambah ini
+    ignoreBuildErrors: true,
   },
   images: {
     unoptimized: true,
@@ -29,4 +21,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA(nextConfig);
+export default nextConfig;

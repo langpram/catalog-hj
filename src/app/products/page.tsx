@@ -14,6 +14,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { useRouter } from "next/navigation";
+import { useOfflineData } from "@/hooks/useOfflineData";
 
 // Komponen Card untuk setiap Kategori
 function CategoryCard({ name, imageUrl }: { name: string; imageUrl: string }) {
@@ -195,40 +196,21 @@ function NavbarSearchBar({
 
 // Halaman Utama Kategori - UBAH JADI CLIENT SIDE
 export default function CategoryPage() {
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: offlineData, isLoading, error, isOnline } = useOfflineData();
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Menggunakan data dari offline storage
+  const banners = offlineData?.banners || [];
+  const categories = offlineData?.categories || [];
 
   // Filter categories berdasarkan search term
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        console.log("🔥 Fetching banners and categories...");
-        const [bannersData, categoriesData] = await Promise.all([
-          getBanners(),
-          getCategories(),
-        ]);
-        console.log("📦 Banners:", bannersData);
-        console.log("📦 Categories:", categoriesData);
-        setBanners(bannersData);
-        setCategories(categoriesData);
-      } catch (err) {
-        console.error("❌ Error fetching data:", err);
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
+  // Status loading dan error dari hook useOfflineData
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
