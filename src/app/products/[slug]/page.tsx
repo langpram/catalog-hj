@@ -37,7 +37,30 @@ export default function ProductListPage({
       setCategoryName(formattedCategoryName);
       
       // Cari produk berdasarkan kategori dari data offline
-      const categoryProducts = offlineData.products[formattedCategoryName] || [];
+      let categoryProducts = offlineData.products[formattedCategoryName] || [];
+
+      // Prioritaskan produk "asofa" dan "an nazeem" untuk kategori "sajadah roll"
+      if (slug === "sajadah-roll") {
+        const prioritizedProducts = ["asofa", "an nazeem"];
+        categoryProducts.sort((a, b) => {
+          const aName = a.name.toLowerCase();
+          const bName = b.name.toLowerCase();
+          const aIndex = prioritizedProducts.indexOf(aName);
+          const bIndex = prioritizedProducts.indexOf(bName);
+
+          if (aIndex > -1 && bIndex > -1) {
+            return aIndex - bIndex;
+          }
+          if (aIndex > -1) {
+            return -1;
+          }
+          if (bIndex > -1) {
+            return 1;
+          }
+          return aName.localeCompare(bName);
+        });
+      }
+
       setProducts(categoryProducts);
     }
   }, [offlineData, slug]);
