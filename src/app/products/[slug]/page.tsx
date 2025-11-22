@@ -39,27 +39,31 @@ export default function ProductListPage({
       // Cari produk berdasarkan kategori dari data offline
       let categoryProducts = offlineData.products[formattedCategoryName] || [];
 
-      // Prioritaskan produk "asofa" dan "an nazeem" untuk kategori "sajadah roll"
-      if (slug === "sajadah-roll") {
-        const prioritizedProducts = ["asofa", "an nazeem"];
-        categoryProducts.sort((a, b) => {
+      // 🔥 FIX: Gabungkan sorting logic
+      categoryProducts.sort((a, b) => {
+        // 1. Prioritas utama: isBestSeller (true harus di atas)
+        // 🔥 FIX: Perbaiki kesalahan logika. Kondisi kedua harus kebalikan dari yang pertama.
+        if (a.isBestSeller && !b.isBestSeller) return -1;
+        if (!a.isBestSeller && b.isBestSeller) return 1;
+
+        // 2. Untuk "sajadah-roll", prioritaskan produk tertentu
+        if (slug === "sajadah-roll") {
+          const prioritizedProducts = ["asofa", "an nazeem"];
           const aName = a.name.toLowerCase();
           const bName = b.name.toLowerCase();
           const aIndex = prioritizedProducts.indexOf(aName);
           const bIndex = prioritizedProducts.indexOf(bName);
 
           if (aIndex > -1 && bIndex > -1) {
-            return aIndex - bIndex;
+            return aIndex - bIndex; // Urutkan berdasarkan indeks di array prioritas
           }
-          if (aIndex > -1) {
-            return -1;
-          }
-          if (bIndex > -1) {
-            return 1;
-          }
-          return aName.localeCompare(bName);
-        });
-      }
+          if (aIndex > -1) return -1; // a diprioritaskan
+          if (bIndex > -1) return 1;  // b diprioritaskan
+        }
+
+        // 3. Fallback: urutkan berdasarkan ID untuk menjaga urutan asli dari API
+        return a.id - b.id;
+      });
 
       setProducts(categoryProducts);
     }

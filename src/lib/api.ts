@@ -1,4 +1,4 @@
-// src/lib/api.ts - FRESH DATA VERSION
+// src/lib/api.ts - FIXED VERSION WITH isBestSeller
 
 import {
   Banner,
@@ -9,13 +9,9 @@ import {
   StrapiProductListResponse,
 } from "@/lib/types";
 
-// Definisikan base URL dari Strapi Anda
 const STRAPI_URL = "https://strapi.fairuzulum.me";
+const FETCH_TIMEOUT = 10000;
 
-// Default timeout untuk fetch
-const FETCH_TIMEOUT = 10000; // 10 seconds
-
-// Helper function untuk fetch dengan timeout
 async function fetchWithTimeout(url: string, options: RequestInit = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
@@ -33,13 +29,12 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}) {
   }
 }
 
-// Fungsi untuk mengambil data banner
 export async function getBanners(): Promise<Banner[]> {
   try {
     const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/hero-banner-kategoris?populate=*`,
       {
-        next: { revalidate: 300 }, // Revalidate setiap 5 menit
+        next: { revalidate: 300 },
       }
     );
 
@@ -66,13 +61,12 @@ export async function getBanners(): Promise<Banner[]> {
   }
 }
 
-// Fungsi untuk mengambil data kategori - FRESH DATA
 export async function getCategories(): Promise<Category[]> {
   try {
     const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/categories?populate=*`,
       {
-        next: { revalidate: 300 }, // Revalidate setiap 5 menit
+        next: { revalidate: 300 },
       }
     );
 
@@ -103,7 +97,6 @@ export async function getCategories(): Promise<Category[]> {
   } catch (error) {
     console.error("Error fetching categories:", error);
 
-    // Return fallback categories untuk error handling
     return [
       { id: 1, name: "CARPET", imageUrl: "/placeholder-category.jpg" },
       { id: 2, name: "RUG", imageUrl: "/placeholder-category.jpg" },
@@ -115,7 +108,7 @@ export async function getCategories(): Promise<Category[]> {
   }
 }
 
-// Fungsi untuk mengambil produk berdasarkan nama kategori - FRESH DATA
+// 🔥 INI YANG LU HARUS FIX - TAMBAH isBestSeller MAPPING
 export async function getProductsByCategory(
   categoryName: string
 ): Promise<Product[]> {
@@ -125,12 +118,14 @@ export async function getProductsByCategory(
     const query = new URLSearchParams({
       populate: "*",
       "filters[categories][name][$eq]": categoryName,
+      // 🔥 REVERT: Biarkan client-side yang sorting, server-side tidak reliable
+      "sort[0]": "id:asc",
     }).toString();
 
     const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/products?${query}`,
       {
-        next: { revalidate: 60 }, // Revalidate setiap 1 menit untuk products
+        next: { revalidate: 60 },
       }
     );
 
@@ -145,6 +140,7 @@ export async function getProductsByCategory(
       return [];
     }
 
+    // 🚨 INI YANG KURANG - MAP isBestSeller
     const products = json.data.map((product) => ({
       id: product.id,
       name: product.name || "Untitled Product",
@@ -155,10 +151,12 @@ export async function getProductsByCategory(
           url: `${STRAPI_URL}${img.url}`,
         })) || [],
       categories: product.categories || [],
+      isBestSeller: product.isBestSeller === true, // 🔥 FIX: Explicit boolean check
     }));
 
     console.log(
-      `Found ${products.length} products for category: ${categoryName}`
+      `Found ${products.length} products for category: ${categoryName}`,
+      products.map(p => ({ name: p.name, isBestSeller: p.isBestSeller }))
     );
     return products;
   } catch (error) {
@@ -170,7 +168,7 @@ export async function getProductsByCategory(
   }
 }
 
-// Fungsi untuk mengambil satu produk berdasarkan ID - FRESH DATA
+// 🔥 FIX JUGA DI getProductById
 export async function getProductById(
   id: string | number
 ): Promise<Product | null> {
@@ -183,7 +181,7 @@ export async function getProductById(
     const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/products?${query}`,
       {
-        next: { revalidate: 300 }, // Revalidate setiap 5 menit
+        next: { revalidate: 300 },
       }
     );
 
@@ -210,6 +208,7 @@ export async function getProductById(
           url: `${STRAPI_URL}${img.url}`,
         })) || [],
       categories: productData.categories || [],
+      isBestSeller: productData.isBestSeller === true, // 🔥 FIX: Explicit boolean check
     };
   } catch (error) {
     console.error(`Error fetching product with ID ${id}:`, error);
@@ -217,7 +216,6 @@ export async function getProductById(
   }
 }
 
-// Portfolio function - FRESH DATA
 export async function getPortfolioProjects(): Promise<
   { id: number; title: string; imageUrl: string }[]
 > {
@@ -225,7 +223,7 @@ export async function getPortfolioProjects(): Promise<
     const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/portofolios?populate=*`,
       {
-        next: { revalidate: 600 }, // Revalidate setiap 10 menit
+        next: { revalidate: 600 },
       }
     );
 
@@ -243,7 +241,7 @@ export async function getPortfolioProjects(): Promise<
     }
 
     return json.data.map((project: any) => {
-      let imageUrl = "/placeholder-portfolio.jpg"; // default
+      let imageUrl = "/placeholder-portfolio.jpg";
 
       if (project.pict?.url) {
         imageUrl = `${STRAPI_URL}${project.pict.url}`;

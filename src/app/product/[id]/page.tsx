@@ -6,6 +6,20 @@ import { Product } from "@/lib/types";
 import { marked } from "marked";
 import { useOfflineData } from "@/hooks/useOfflineData";
 
+// Helper function untuk sort products (best seller duluan)
+const sortProductsByBestSeller = (products: Product[]): Product[] => {
+  return [...products].sort((a, b) => {
+    const aIsBest = a.isBestSeller === true ? 1 : 0;
+    const bIsBest = b.isBestSeller === true ? 1 : 0;
+    
+    if (bIsBest !== aIsBest) {
+      return bIsBest - aIsBest;
+    }
+    
+    return a.id - b.id;
+  });
+};
+
 export default function ProductDetailPage({
   params,
 }: {
@@ -55,7 +69,9 @@ export default function ProductDetailPage({
         // Cari produk lain dalam kategori yang sama
         if (categoryName) {
           const categoryProducts = offlineData.products[categoryName] || [];
-          const others = categoryProducts
+          
+          // SORT BIAR BEST SELLER DULUAN
+          const others = sortProductsByBestSeller(categoryProducts)
             .filter(p => p.id !== productId)
             .slice(0, 3);
           

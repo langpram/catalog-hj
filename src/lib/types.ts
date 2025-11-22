@@ -26,6 +26,7 @@ export interface ApiImage {
     description: string | null;
     images: ApiImage[];
     categories: ProductCategory[];
+    isBestSeller?: boolean; // TAMBAH INI - untuk best seller products
   }
   
   // Tipe untuk objek kategori yang ada di dalam relasi produk
@@ -60,6 +61,7 @@ export interface ApiImage {
       deskripsi: string | null;
       images: ApiImage[];
       categories: ProductCategory[];
+      isBestSeller?: boolean; // TAMBAH INI - sesuai dengan field di Strapi
     }[];
   }
   
@@ -70,5 +72,6 @@ export interface ApiImage {
       deskripsi: string | null; // Sesuaikan dengan nama field di Strapi
       images: ApiImage[];
       categories: ProductCategory[];
+      isBestSeller?: boolean; // TAMBAH INI - sesuai dengan field di Strapi
     };
   }

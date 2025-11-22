@@ -1,4 +1,4 @@
-// src/hooks/useOfflineData.ts
+// src/hooks/useOfflineData.ts - FIXED VERSION
 import { useEffect, useState, useCallback } from 'react';
 import { Banner, Category, Product } from '@/lib/types';
 import { getBanners, getCategories, getPortfolioProjects, getProductsByCategory } from '@/lib/api';
@@ -7,13 +7,31 @@ interface OfflineData {
   banners: Banner[];
   categories: Category[];
   portfolios: Array<{ id: number; title: string; imageUrl: string }>;
-  products: Record<string, Product[]>; // Keyed by category name
-  lastSynced: number; // Timestamp
+  products: Record<string, Product[]>;
+  lastSynced: number;
 }
 
 const STORAGE_KEY = 'offline_catalog_data';
 
-export function useOfflineData() {
+// 🔥 FIXED: Sorting function yang lebih robust
+const sortProductsByBestSeller = (products: Product[]): Product[] => {
+  // Create a shallow copy to avoid modifying the original array
+  const productsCopy = [...products];
+
+  productsCopy.sort((a, b) => {
+    // Prioritize best sellers (true should come first)
+    // 🔥 FIX: Perbaiki kesalahan logika. Kondisi kedua harus kebalikan dari yang pertama.
+    if (a.isBestSeller && !b.isBestSeller) return -1; // a comes first
+    if (!a.isBestSeller && b.isBestSeller) return 1; // b comes first
+
+    // If best seller status is the same, sort by ID (ascending)
+    return a.id - b.id;
+  });
+
+  return productsCopy;
+};
+
+export const useOfflineData = () => {
   const [offlineData, setOfflineData] = useState<OfflineData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -27,7 +45,16 @@ export function useOfflineData() {
       try {
         const storedData = localStorage.getItem(STORAGE_KEY);
         if (storedData) {
-          setOfflineData(JSON.parse(storedData));
+          const parsed = JSON.parse(storedData);
+          
+          // 🔥 SORT AGAIN saat load dari localStorage
+          if (parsed.products) {
+            Object.keys(parsed.products).forEach(categoryName => {
+              parsed.products[categoryName] = sortProductsByBestSeller(parsed.products[categoryName]);
+            });
+          }
+          
+          setOfflineData(parsed);
         }
       } catch (err) {
         console.error('Error loading offline data:', err);
@@ -93,7 +120,18 @@ export function useOfflineData() {
       // Fetch products for each category
       const productsData: Record<string, Product[]> = {};
       for (const category of categoriesData) {
-        productsData[category.name] = await getProductsByCategory(category.name);
+        // 🔥 FIX: getProductsByCategory sudah mengurutkan, tidak perlu sort lagi
+        const products = await getProductsByCategory(category.name);
+        
+        console.log(`📦 Category "${category.name}" - Products:`, 
+          products.map(p => ({ 
+            id: p.id, 
+            name: p.name, 
+            isBestSeller: p.isBestSeller 
+          }))
+        );
+        
+        productsData[category.name] = products;
       }
 
       // Create new offline data object
