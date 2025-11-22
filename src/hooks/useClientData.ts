@@ -13,6 +13,18 @@ interface OfflineData {
 
 const STORAGE_KEY = 'offline_catalog_data';
 
+// Fungsi validasi untuk memastikan data offline memiliki struktur yang benar
+function isValidOfflineData(data: any): data is OfflineData {
+  return (
+    data &&
+    Array.isArray(data.banners) &&
+    Array.isArray(data.categories) &&
+    Array.isArray(data.portfolios) &&
+    typeof data.products === 'object' &&
+    typeof data.lastSynced === 'number'
+  );
+}
+
 export function useClientData() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -35,8 +47,13 @@ export function useClientData() {
         
         if (storedData) {
           try {
-            offlineData = JSON.parse(storedData);
-            console.log("📦 Using offline data from localStorage");
+            const parsedData = JSON.parse(storedData);
+            if (isValidOfflineData(parsedData)) {
+              offlineData = parsedData;
+              console.log("📦 Using valid offline data from localStorage");
+            } else {
+              console.warn("⚠️ Invalid offline data structure, ignoring...");
+            }
           } catch (err) {
             console.error("Error parsing offline data:", err);
           }
