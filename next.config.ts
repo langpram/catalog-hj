@@ -41,9 +41,6 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 });
 
 const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -57,6 +54,10 @@ const nextConfig: NextConfig = {
         pathname: "/uploads/**",
       },
     ],
+  },
+  // Turbopack configuration untuk Next.js 16
+  turbopack: {
+    // Turbopack akan auto-configure untuk kebanyakan kasus
   },
 };
 
