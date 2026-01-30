@@ -132,7 +132,7 @@ export default function LandingPage() {
           </h1>
           <div className="h-1 w-24 bg-gradient-to-r from-[#B3CFE5] to-[#4A7FA7] mx-auto rounded-full"></div>
           <p className="text-lg text-[#B3CFE5] font-medium">
-            Supplier karpet berkualitas tinggi
+            Dari Indonesia untuk Indonesia. Karpet Custom Premium dengan Sentuhan Lokal yang Mendunia.
           </p>
         </div>
 
