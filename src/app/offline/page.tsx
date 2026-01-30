@@ -32,7 +32,7 @@ export default function OfflinePage() {
             </Button>
           </Link>
 
-          <Link href="/portofolio">
+          <Link href="/portfolio">
             <Button className="w-full bg-red-600 hover:bg-red-700 text-white">
               🖼️ Lihat Portfolio
             </Button>
