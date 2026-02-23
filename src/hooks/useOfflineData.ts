@@ -212,7 +212,7 @@ export const useOfflineData = (options?: { onSyncProgress?: (progress: number, m
         }
       }
 
-      if (onProgress) onProgress(95, 'Saving data...');
+      if (onProgress) onProgress(90, 'Preparing to save data...');
 
       // Create new offline data object
       const newOfflineData: OfflineData = {
@@ -226,6 +226,40 @@ export const useOfflineData = (options?: { onSyncProgress?: (progress: number, m
       // Save to localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newOfflineData));
       setOfflineData(newOfflineData);
+
+      // Pre-cache important pages (home, listing, and portfolio detail pages)
+      if (typeof window !== 'undefined') {
+        const pageUrls = new Set<string>();
+        pageUrls.add('/');
+        pageUrls.add('/products');
+        pageUrls.add('/portfolio');
+
+        sortedPortfolios.forEach((p) => {
+          const slugOrId = p.slug || p.id.toString();
+          pageUrls.add(`/portfolio/${slugOrId}`);
+        });
+
+        const origin = window.location.origin;
+        const allPageUrls = Array.from(pageUrls);
+
+        for (let i = 0; i < allPageUrls.length; i++) {
+          const path = allPageUrls[i];
+          const url = `${origin}${path}`;
+          try {
+            await fetch(url);
+          } catch (e) {
+            console.warn(`Failed to pre-cache page: ${url}`, e);
+          }
+
+          if (onProgress) {
+            const progress =
+              90 + Math.round(((i + 1) / allPageUrls.length) * 5); // 90% to 95%
+            onProgress(progress, `Caching pages for offline use (${i + 1}/${allPageUrls.length})...`);
+          }
+        }
+      }
+
+      if (onProgress) onProgress(100, 'Saving data...');
       
       // Send data to service worker for caching
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
