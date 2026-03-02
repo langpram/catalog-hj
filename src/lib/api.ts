@@ -87,10 +87,8 @@ export async function getBanners(): Promise<Banner[]> {
 export async function getCategories(): Promise<Category[]> {
   try {
     const response = await fetchWithTimeout(
-      `${STRAPI_URL}/api/categories?populate=*`,
-      {
-        next: { revalidate: 300 },
-      }
+      `${STRAPI_URL}/api/categories?populate[image]=true&populate[children][populate][0]=image&populate[parent]=true`,
+      { next: { revalidate: 300 } }
     );
 
     if (!response.ok) {
@@ -104,31 +102,75 @@ export async function getCategories(): Promise<Category[]> {
       return [];
     }
 
-    const categories = json.data.map((category) => ({
-      id: category.id,
-      name: category.name,
-      imageUrl: category.image?.url
-        ? normalizeImageUrl(category.image.url)
-        : "/placeholder-category.jpg",
-    }));
+    const allCategories: Category[] = json.data.map((category) => {
+      // 🔥 Normalize children: bisa null, object, atau array
+      let childrenArray: Category[] = [];
+
+      if (category.children) {
+        // Kalau object tunggal (bukan array), wrap jadi array
+        const rawChildren = Array.isArray(category.children)
+          ? category.children
+          : [category.children];
+
+        childrenArray = rawChildren.map((child) => ({
+          id: child.id,
+          name: child.name,
+          imageUrl: child.image?.url
+            ? normalizeImageUrl(child.image.url)
+            : "/placeholder-category.jpg",
+          children: [],
+          parent: { id: category.id, name: category.name },
+        }));
+      }
+
+      return {
+        id: category.id,
+        name: category.name,
+        imageUrl: category.image?.url
+          ? normalizeImageUrl(category.image.url)
+          : "/placeholder-category.jpg",
+        children: childrenArray,
+        parent: category.parent
+          ? { id: category.parent.id, name: category.parent.name }
+          : null,
+      };
+    });
 
     console.log(
-      `✅ Fetched ${categories.length} categories:`,
-      categories.map((c) => c.name)
+      `✅ Fetched ${allCategories.length} categories:`,
+      allCategories.map((c) => ({
+        name: c.name,
+        childrenCount: c.children?.length ?? 0,
+        hasParent: !!c.parent,
+      }))
     );
-    return categories;
+
+// Definisikan urutan yang diinginkan
+const ORDER = [
+  "KARPET CUSTOM",
+  "SAJADAH ROLL",
+  "KARPET TILE",
+  "KARPET METERAN",
+  "ANEKA SAJADAH",
+  "PERMADANI",
+  "WALLPAPER",
+  "FIBERGLASS",
+  "INTERIOR",
+];
+
+allCategories.sort((a, b) => {
+  const indexA = ORDER.indexOf(a.name.toUpperCase());
+  const indexB = ORDER.indexOf(b.name.toUpperCase());
+  // Kategori yang tidak ada di ORDER list → taruh di akhir
+  const posA = indexA === -1 ? 999 : indexA;
+  const posB = indexB === -1 ? 999 : indexB;
+  return posA - posB;
+});
+
+return allCategories;
   } catch (error) {
     console.error("❌ Error fetching categories:", error);
-
-    // Fallback data
-    return [
-      { id: 1, name: "CARPET", imageUrl: "/placeholder-category.jpg" },
-      { id: 2, name: "RUG", imageUrl: "/placeholder-category.jpg" },
-      { id: 3, name: "KARPET MASJID", imageUrl: "/placeholder-category.jpg" },
-      { id: 4, name: "KARPET KANTOR", imageUrl: "/placeholder-category.jpg" },
-      { id: 5, name: "KARPET HOTEL", imageUrl: "/placeholder-category.jpg" },
-      { id: 6, name: "SAJADAH ROLL", imageUrl: "/placeholder-category.jpg" },
-    ];
+    return [];
   }
 }
 

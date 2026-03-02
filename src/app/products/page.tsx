@@ -199,14 +199,17 @@ export default function CategoryPage() {
   const { data: offlineData, isLoading, error, isOnline } = useOfflineData();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Menggunakan data dari offline storage
   const banners = offlineData?.banners || [];
   const categories = offlineData?.categories || [];
 
-  // Filter categories berdasarkan search term
-  const filteredCategories = categories.filter(category =>
+  // 🔥 Hanya ambil root categories (tidak punya parent)
+  const rootCategories = categories.filter((c) => !c.parent);
+
+  // Filter root categories berdasarkan search term
+  const filteredCategories = rootCategories.filter((category) =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
 
   // Status loading dan error dari hook useOfflineData
 
@@ -334,7 +337,7 @@ export default function CategoryPage() {
           )}
           
           {/* Grid yang lebih clean - Mobile: 2 kolom, Tablet: 3 kolom, Desktop: 4 kolom */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             {filteredCategories.length > 0 ? (
               filteredCategories.map((category) => (
                 <CategoryCard
@@ -349,7 +352,7 @@ export default function CategoryPage() {
                   {searchTerm ? "Kategori tidak ditemukan." : "Kategori tidak ditemukan."}
                 </p>
                 {searchTerm && (
-                  <button
+                  <button  
                     onClick={() => setSearchTerm("")}
                     className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >

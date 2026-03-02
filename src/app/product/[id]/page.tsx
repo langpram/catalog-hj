@@ -2,9 +2,12 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Product } from "@/lib/types";
 import { marked } from "marked";
 import { useOfflineData } from "@/hooks/useOfflineData";
+import Link from "next/link";
+import { ChevronLeft, Home } from "lucide-react";
 
 // Helper function untuk sort products (best seller duluan)
 const sortProductsByBestSeller = (products: Product[]): Product[] => {
@@ -25,6 +28,7 @@ export default function ProductDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const router = useRouter();
   const { id } = use(params);
   const { data: offlineData, isLoading, error, isOnline } = useOfflineData();
   const [product, setProduct] = useState<Product | null>(null);
@@ -111,9 +115,30 @@ export default function ProductDetailPage({
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading product...</p>
+        <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <Link
+                href="/"
+                className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+              >
+                <Home className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              </Link>
+              <button
+                onClick={() => router.back()}
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex-shrink-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Kembali
+              </button>
+            </div>
+          </div>
+        </nav>
+        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading product...</p>
+          </div>
         </div>
       </div>
     );
@@ -122,15 +147,36 @@ export default function ProductDetailPage({
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-          >
-            Retry
-          </button>
+      <div className="min-h-screen bg-white dark:bg-gray-950">
+        <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <Link
+                href="/"
+                className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+              >
+                <Home className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              </Link>
+              <button
+                onClick={() => router.back()}
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex-shrink-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Kembali
+              </button>
+            </div>
+          </div>
+        </nav>
+        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">Error: {error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -139,17 +185,26 @@ export default function ProductDetailPage({
   if (!product && offlineData) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-          {/* Back Button */}
-          <div className="mb-6">
-            <a 
-              href="/products" 
-              className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
-            >
-              ← Back
-            </a>
+        <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <Link
+                href="/"
+                className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+              >
+                <Home className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              </Link>
+              <button
+                onClick={() => router.back()}
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex-shrink-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Kembali
+              </button>
+            </div>
           </div>
-          
+        </nav>
+        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <div className="text-center py-12">
             <h1 className="text-3xl font-bold mb-4">Produk Tidak Ditemukan</h1>
             <p className="text-gray-600 mb-6">Produk dengan ID {id} tidak ditemukan.</p>
@@ -161,16 +216,27 @@ export default function ProductDetailPage({
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-        {/* Back Button */}
-        <div className="mb-6">
-          <a 
-            href="/products" 
-            className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
-          >
-            ← Back
-          </a>
+      <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link
+              href="/"
+              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+            >
+              <Home className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            </Link>
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex-shrink-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Kembali
+            </button>
+          </div>
         </div>
+      </nav>
+
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
         
         {product && (
           <>

@@ -23,7 +23,12 @@ export interface Banner {
 export interface Category {
   id: number;
   name: string;
-  imageUrl: string;
+  imageUrl: string;  
+  children?: Category[];   // 🔥 sub-categories
+  parent?: {               // 🔥 untuk deteksi apakah ini child
+    id: number;
+    name: string;
+  } | null;      // 🔥 NEW - sub categories
 }
 
 // Product
@@ -67,11 +72,26 @@ export interface StrapiBannerResponse {
   }[];
 }
 
+// Update StrapiCategoryResponse
 export interface StrapiCategoryResponse {
   data: {
     id: number;
     name: string;
-    image: ApiImage;
+    image: ApiImage | null;
+    // 🔥 children bisa object tunggal, array, atau null (tergantung Strapi)
+    children: {
+      id: number;
+      name: string;
+      image: ApiImage | null;
+    } | {
+      id: number;
+      name: string;
+      image: ApiImage | null;
+    }[] | null;
+    parent: {
+      id: number;
+      name: string;
+    } | null;
   }[];
 }
 
