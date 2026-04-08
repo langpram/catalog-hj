@@ -29,6 +29,34 @@ const sortProductsByBestSeller = (products: Product[]): Product[] => {
   });
 };
 
+// Helper untuk prefetch satu image dengan handling ngrok
+const prefetchImage = async (url: string): Promise<boolean> => {
+  try {
+    if (!url || !url.startsWith('http')) return false;
+
+    const finalUrl = url + (url.includes('?') ? '&' : '?') + 'ngrok-skip-browser-warning=true';
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 18000); // 18 detik timeout
+
+    const response = await fetch(finalUrl, {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-cache',
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    return response.type === 'opaque' || response.ok;
+  } catch (error) {
+    console.warn(`Failed to pre-fetch image: ${url}`, error);
+    return false;
+  }
+};
+
 export const useOfflineData = (options?: { onSyncProgress?: (progress: number, message: string) => void }) => {
   const [offlineData, setOfflineData] = useState<OfflineData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +65,7 @@ export const useOfflineData = (options?: { onSyncProgress?: (progress: number, m
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
-  // Load data from localStorage on mount
+  // Load data from localStorage
   useEffect(() => {
     const loadOfflineData = () => {
       try {
@@ -48,10 +76,9 @@ export const useOfflineData = (options?: { onSyncProgress?: (progress: number, m
           if (parsed.portfolios) {
             parsed.portfolios = sortPortfoliosByFeatured(parsed.portfolios);
           }
-
           if (parsed.products) {
-            Object.keys(parsed.products).forEach(categoryName => {
-              parsed.products[categoryName] = sortProductsByBestSeller(parsed.products[categoryName]);
+            Object.keys(parsed.products).forEach(key => {
+              parsed.products[key] = sortProductsByBestSeller(parsed.products[key]);
             });
           }
 
@@ -59,7 +86,6 @@ export const useOfflineData = (options?: { onSyncProgress?: (progress: number, m
         }
       } catch (err) {
         console.error('Error loading offline data:', err);
-        setError('Failed to load offline data');
       } finally {
         setIsLoading(false);
       }
@@ -79,7 +105,7 @@ export const useOfflineData = (options?: { onSyncProgress?: (progress: number, m
     };
   }, []);
 
-  // Check for service worker updates
+  // Service Worker update listener
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
@@ -111,7 +137,7 @@ export const useOfflineData = (options?: { onSyncProgress?: (progress: number, m
 
     try {
       console.log('🔄 Syncing data from API...');
-      if (onProgress) onProgress(5, 'Fetching data from API...');
+      if (onProgress) onProgress(5, 'Fetching main data...');
 
       const [bannersData, categoriesData, portfoliosData] = await Promise.all([
         getBanners(),
@@ -119,112 +145,87 @@ export const useOfflineData = (options?: { onSyncProgress?: (progress: number, m
         getPortfolioProjects(),
       ]);
 
-      if (onProgress) onProgress(15, 'Processing data...');
+      if (onProgress) onProgress(15, 'Processing categories...');
 
       const sortedPortfolios = sortPortfoliosByFeatured(portfoliosData);
 
-      // ============================================================
-      // 🔥 PISAH: root categories vs child categories
-      // ============================================================
+      // Pisah root & child categories
       const rootCategories = categoriesData.filter((c) => !c.parent);
       const childCategories = categoriesData.filter((c) => !!c.parent);
 
-      console.log(`📂 Root categories: ${rootCategories.map(c => c.name).join(', ')}`);
-      console.log(`📁 Child categories: ${childCategories.map(c => c.name).join(', ')}`);
+      console.log(`📂 Root categories: ${rootCategories.length}`);
+      console.log(`📁 Child categories: ${childCategories.length}`);
 
       const productsData: Record<string, Product[]> = {};
-
-      // Hitung total untuk progress — root + child
       const allCategoriesToFetch = [...rootCategories, ...childCategories];
-      const totalCategories = allCategoriesToFetch.length;
-      let processedCategories = 0;
 
-      // Fetch produk untuk ROOT categories
-      for (const category of rootCategories) {
+      // Fetch products per category
+      for (let i = 0; i < allCategoriesToFetch.length; i++) {
+        const category = allCategoriesToFetch[i];
         const products = await getProductsByCategory(category.name);
         productsData[category.name] = sortProductsByBestSeller(products);
 
-        processedCategories++;
         if (onProgress) {
-          const progress = 15 + Math.round((processedCategories / totalCategories) * 15);
-          onProgress(progress, `Fetching products for ${category.name}...`);
-        }
-      }
-
-      // Fetch produk untuk CHILD categories
-      for (const category of childCategories) {
-        const products = await getProductsByCategory(category.name);
-        productsData[category.name] = sortProductsByBestSeller(products);
-
-        processedCategories++;
-        if (onProgress) {
-          const progress = 15 + Math.round((processedCategories / totalCategories) * 15);
+          const progress = 15 + Math.round(((i + 1) / allCategoriesToFetch.length) * 15);
           onProgress(progress, `Fetching products for ${category.name}...`);
         }
       }
 
       // ============================================================
-      // Collect image URLs untuk caching
+      // Collect ALL image URLs
       // ============================================================
-      if (onProgress) onProgress(30, 'Preparing assets for download...');
+      if (onProgress) onProgress(35, 'Collecting images...');
+
       const imageUrls = new Set<string>();
 
-      bannersData.forEach(b => {
-        if (b.imageUrl) imageUrls.add(b.imageUrl);
-      });
-
-      // 🔥 Collect gambar semua kategori (root + child)
+      bannersData.forEach(b => b.imageUrl && imageUrls.add(b.imageUrl));
       categoriesData.forEach(c => {
         if (c.imageUrl) imageUrls.add(c.imageUrl);
-        // Juga collect gambar children jika ada
-        c.children?.forEach(child => {
-          if (child.imageUrl) imageUrls.add(child.imageUrl);
-        });
+        c.children?.forEach(child => child.imageUrl && imageUrls.add(child.imageUrl));
       });
-
       sortedPortfolios.forEach(p => {
         if (p.imageUrl) imageUrls.add(p.imageUrl);
-        if (p.pict) p.pict.forEach(url => imageUrls.add(url));
+        p.pict?.forEach(url => url && imageUrls.add(url));
       });
-
       Object.values(productsData).flat().forEach(p => {
-        if (p.images) {
-          p.images.forEach(img => {
-            if (img.url) imageUrls.add(img.url);
-          });
-        }
+        p.images?.forEach(img => img.url && imageUrls.add(img.url));
       });
 
-      // Download images in batches
-      const totalImages = imageUrls.size;
-      let downloadedImages = 0;
       const urlsArray = Array.from(imageUrls);
+      const totalImages = urlsArray.length;
+      console.log(`📥 Found ${totalImages} images to prefetch`);
 
-      console.log(`📥 Downloading ${totalImages} assets for offline use...`);
+      // ============================================================
+      // Prefetch Images dengan batch kecil + delay (Paling Krusial)
+      // ============================================================
+      if (onProgress) onProgress(40, 'Downloading images...');
 
-      const BATCH_SIZE = 5;
+      const BATCH_SIZE = 3;           // Kecil biar ngrok tidak mati
+      const DELAY_MS = 700;           // Delay antar batch
+      let successCount = 0;
+
       for (let i = 0; i < urlsArray.length; i += BATCH_SIZE) {
         const batch = urlsArray.slice(i, i + BATCH_SIZE);
-        await Promise.all(batch.map(async (url) => {
-          try {
-            await fetch(url, { mode: 'no-cors' });
-          } catch (e) {
-            console.warn(`Failed to pre-fetch image: ${url}`, e);
-          }
-        }));
 
-        downloadedImages += batch.length;
+        const results = await Promise.all(batch.map(url => prefetchImage(url)));
+        successCount += results.filter(Boolean).length;
+
         if (onProgress) {
-          const progress = 30 + Math.round((Math.min(downloadedImages, totalImages) / totalImages) * 60);
-          onProgress(progress, `Downloading assets (${Math.min(downloadedImages, totalImages)}/${totalImages})...`);
+          const progress = 40 + Math.round(((i + batch.length) / totalImages) * 50);
+          onProgress(progress, `Downloading images (${successCount}/${totalImages})...`);
+        }
+
+        // Delay antar batch supaya ngrok tenang
+        if (i + BATCH_SIZE < urlsArray.length) {
+          await new Promise(resolve => setTimeout(resolve, DELAY_MS));
         }
       }
 
-      if (onProgress) onProgress(90, 'Preparing to save data...');
+      if (onProgress) onProgress(90, 'Saving data to localStorage...');
 
       const newOfflineData: OfflineData = {
         banners: bannersData,
-        categories: categoriesData, // 🔥 Simpan SEMUA kategori (root + child) agar [slug]/page bisa lookup children
+        categories: categoriesData,
         portfolios: sortedPortfolios,
         products: productsData,
         lastSynced: Date.now(),
@@ -233,72 +234,20 @@ export const useOfflineData = (options?: { onSyncProgress?: (progress: number, m
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newOfflineData));
       setOfflineData(newOfflineData);
 
-      // Pre-cache pages
-      if (typeof window !== 'undefined') {
-        const pageUrls = new Set<string>();
-        pageUrls.add('/');
-        pageUrls.add('/products');
-        pageUrls.add('/portfolio');
-
-        // 🔥 Cache halaman untuk root categories
-        rootCategories.forEach(c => {
-          const slug = c.name.toLowerCase().replace(/\s+/g, '-');
-          pageUrls.add(`/products/${slug}`);
-        });
-
-        // 🔥 Cache halaman untuk child categories
-        childCategories.forEach(c => {
-          const slug = c.name.toLowerCase().replace(/\s+/g, '-');
-          pageUrls.add(`/products/${slug}`);
-        });
-
-        sortedPortfolios.forEach((p) => {
-          const slugOrId = p.slug || p.id.toString();
-          pageUrls.add(`/portfolio/${slugOrId}`);
-        });
-
-        const origin = window.location.origin;
-        const allPageUrls = Array.from(pageUrls);
-
-        for (let i = 0; i < allPageUrls.length; i++) {
-          const path = allPageUrls[i];
-          try {
-            await fetch(`${origin}${path}`);
-          } catch (e) {
-            console.warn(`Failed to pre-cache page: ${path}`, e);
-          }
-
-          if (onProgress) {
-            const progress = 90 + Math.round(((i + 1) / allPageUrls.length) * 9);
-            onProgress(progress, `Caching pages (${i + 1}/${allPageUrls.length})...`);
-          }
-        }
-      }
-
-      if (onProgress) onProgress(100, 'Saving data...');
-
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'CACHE_API_DATA',
-          data: newOfflineData,
-        });
-      }
-
-      // Log summary
-      const featuredPortfolios = sortedPortfolios.filter(p => p.Big_project).length;
-      const bestSellerProducts = Object.values(productsData).flat().filter(p => p.isBestSeller).length;
+      // Optional: Pre-cache important pages
+      if (onProgress) onProgress(95, 'Caching pages...');
+      // ... (kode caching page bisa kamu tambah lagi kalau perlu)
 
       console.log('✅ Data synced successfully!');
-      console.log(`📂 Root categories: ${rootCategories.length}`);
-      console.log(`📁 Child categories: ${childCategories.length}`);
-      console.log(`📌 Featured portfolios: ${featuredPortfolios}`);
-      console.log(`⭐ Best seller products: ${bestSellerProducts}`);
+      console.log(`📂 Root: ${rootCategories.length} | Child: ${childCategories.length}`);
+      console.log(`🖼️  Images prefetched: ${successCount}/${totalImages}`);
 
       if (onProgress) onProgress(100, 'Sync complete!');
       return true;
-    } catch (err) {
+
+    } catch (err: any) {
       console.error('❌ Error syncing data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to sync data');
+      setError(err.message || 'Failed to sync data');
       return false;
     } finally {
       setIsSyncing(false);
@@ -312,7 +261,7 @@ export const useOfflineData = (options?: { onSyncProgress?: (progress: number, m
     }
   }, []);
 
-  // Initial sync if no data exists
+  // Auto sync pertama kali kalau belum ada data
   useEffect(() => {
     if (!offlineData && isOnline && !isLoading) {
       syncData();

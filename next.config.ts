@@ -7,25 +7,27 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   disable: process.env.NODE_ENV === "development",
   runtimeCaching: [
     {
-      urlPattern: /^https?:\/\/strapi\.fairuzulum\.me\/api\/.*/i,
+      // 🔥 update ke ngrok URL
+      urlPattern: /^https?:\/\/turgent-annis-groundedly\.ngrok-free\.dev\/api\/.*/i,
       handler: "NetworkFirst",
       options: {
         cacheName: "api-cache",
         expiration: {
           maxEntries: 64,
-          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+          maxAgeSeconds: 24 * 60 * 60,
         },
         networkTimeoutSeconds: 10,
       },
     },
     {
-      urlPattern: /^https?:\/\/strapi\.fairuzulum\.me\/uploads\/.*/i,
+      // 🔥 update ke ngrok URL
+      urlPattern: /^https?:\/\/turgent-annis-groundedly\.ngrok-free\.dev\/uploads\/.*/i,
       handler: "CacheFirst",
       options: {
         cacheName: "image-cache",
         expiration: {
           maxEntries: 64,
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+          maxAgeSeconds: 7 * 24 * 60 * 60,
         },
       },
     },
@@ -47,6 +49,14 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
     remotePatterns: [
+      // 🔥 tambah ngrok
+      {
+        protocol: "https",
+        hostname: "turgent-annis-groundedly.ngrok-free.dev",
+        port: "",
+        pathname: "/uploads/**",
+      },
+      // keep yang lama kalau masih dipake
       {
         protocol: "https",
         hostname: "strapi.fairuzulum.me",
@@ -55,10 +65,19 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Turbopack configuration untuk Next.js 16
-  turbopack: {
-    // Turbopack akan auto-configure untuk kebanyakan kasus
+  async rewrites() {
+    return [
+      {
+        source: "/api-proxy/:path*",
+        destination: "https://turgent-annis-groundedly.ngrok-free.dev/api/:path*",
+      },
+      {
+        source: "/uploads/:path*",
+        destination: "https://turgent-annis-groundedly.ngrok-free.dev/uploads/:path*",
+      },
+    ];
   },
+  turbopack: {},
 };
 
 export default withPWA(nextConfig);

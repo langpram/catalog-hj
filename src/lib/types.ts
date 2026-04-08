@@ -1,5 +1,3 @@
-// src/lib/types.ts - UPDATED DENGAN PORTFOLIO_CATEGORY
-
 // ===============================================
 // TIPE UNTUK API IMAGES
 // ===============================================
@@ -13,25 +11,22 @@ export interface ApiImage {
 // TIPE UNTUK DATA YANG SUDAH BERSIH (CLEAN DATA)
 // ===============================================
 
-// Banner
 export interface Banner {
   id: number;
   imageUrl: string;
 }
 
-// Category
 export interface Category {
   id: number;
   name: string;
-  imageUrl: string;  
-  children?: Category[];   // 🔥 sub-categories
-  parent?: {               // 🔥 untuk deteksi apakah ini child
+  imageUrl: string;
+  children?: Category[];
+  parent?: {
     id: number;
     name: string;
-  } | null;      // 🔥 NEW - sub categories
+  } | null;
 }
 
-// Product
 export interface Product {
   id: number;
   name: string;
@@ -41,28 +36,26 @@ export interface Product {
   isBestSeller?: boolean;
 }
 
-// Product Category (relasi di dalam product)
 export interface ProductCategory {
   id: number;
   name: string;
 }
 
-// 🔥 Portfolio - UPDATED dengan Portfolio_Category
 export interface Portfolio {
   id: number;
   title: string;
   slug?: string;
   description: string;
-  pict: string[]; // Array of image URLs
-  imageUrl?: string; // Single main image untuk list view
+  pict: string[];
+  imageUrl?: string;
   Big_project: boolean;
-  Portfolio_Category?: string; // 🔥 Enumeration value (e.g. "Pemerintahan", "Masjid")
+  Portfolio_Category?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 // ===============================================
-// TIPE UNTUK RESPON MENTAH DARI API STRAPI
+// TIPE UNTUK RESPON MENTAH DARI API STRAPI V5
 // ===============================================
 
 export interface StrapiBannerResponse {
@@ -72,22 +65,23 @@ export interface StrapiBannerResponse {
   }[];
 }
 
-// Update StrapiCategoryResponse
 export interface StrapiCategoryResponse {
   data: {
     id: number;
     name: string;
     image: ApiImage | null;
-    // 🔥 children bisa object tunggal, array, atau null (tergantung Strapi)
-    children: {
-      id: number;
-      name: string;
-      image: ApiImage | null;
-    } | {
-      id: number;
-      name: string;
-      image: ApiImage | null;
-    }[] | null;
+    children:
+      | {
+          id: number;
+          name: string;
+          image: ApiImage | null;
+        }
+      | {
+          id: number;
+          name: string;
+          image: ApiImage | null;
+        }[]
+      | null;
     parent: {
       id: number;
       name: string;
@@ -117,31 +111,25 @@ export interface StrapiSingleProductResponse {
   };
 }
 
-// 🔥 Portfolio Response dari Strapi
+// Strapi v5 - flat structure, no attributes wrapper
 export interface StrapiPortfolioResponse {
   data: {
     id: number;
-    attributes: {
-      title: string;
-      slug?: string;
-      Description: string;
-      pict: {
-        data: {
-          id: number;
-          attributes: {
-            url: string;
-            formats?: {
-              medium?: { url: string };
-              small?: { url: string };
-              thumbnail?: { url: string };
-            };
-          };
-        }[];
+    title: string;
+    slug?: string;
+    Description: string;
+    pict: {
+      id: number;
+      url: string;
+      formats?: {
+        medium?: { url: string };
+        small?: { url: string };
+        thumbnail?: { url: string };
       };
-      Big_project: boolean;
-      Portfolio_Category?: string; // 🔥 Enumeration
-      createdAt?: string;
-      updatedAt?: string;
-    };
+    }[];
+    Big_project: boolean;
+    Portfolio_Category?: string;
+    createdAt?: string;
+    updatedAt?: string;
   }[];
 }
