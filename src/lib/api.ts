@@ -28,7 +28,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}) {
       signal: controller.signal,
       headers: {
         ...options.headers,
-        'ngrok-skip-browser-warning': 'true',   // ← pakai header, bukan cuma query
+        'ngrok-skip-browser-warning': 'true',
       },
     });
     clearTimeout(timeoutId);
@@ -188,11 +188,14 @@ export async function getProductById(id: string | number): Promise<Product | nul
 
 function processPortfolioData(project: any): Portfolio {
   const images: string[] = [];
-  if (Array.isArray(project.pict)) {
-    project.pict.forEach((pic: any) => {
+
+  if (project.pict) {
+    const pictArray = Array.isArray(project.pict) ? project.pict : [project.pict];
+    pictArray.forEach((pic: any) => {
       if (pic?.url) images.push(normalizeImageUrl(pic.url));
     });
   }
+
   return {
     id: project.id,
     title: project.title || "Untitled Project",
@@ -209,32 +212,22 @@ function processPortfolioData(project: any): Portfolio {
 
 export async function getPortfolioProjects(): Promise<Portfolio[]> {
   try {
-    const endpoints = [
-      `${STRAPI_URL}/api/portfolios?populate=*`,
+    const response = await fetchWithTimeout(
       `${STRAPI_URL}/api/portofolios?populate=*`,
-      `${STRAPI_URL}/api/portfolio?populate=*`,
-      `${STRAPI_URL}/api/portofolio?populate=*`,
-    ];
+      { next: { revalidate: 600 } }
+    );
 
-    for (const endpoint of endpoints) {
-      try {
-        const response = await fetchWithTimeout(endpoint, { next: { revalidate: 600 } });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.data && data.data.length > 0) {
-            const portfolios = data.data.map((p: any) => processPortfolioData(p));
-            return portfolios.sort((a: Portfolio, b: Portfolio) => {
-              if (a.Big_project && !b.Big_project) return -1;
-              if (!a.Big_project && b.Big_project) return 1;
-              return a.id - b.id;
-            });
-          }
-        }
-      } catch (err) {
-        continue;
-      }
-    }
-    return [];
+    if (!response.ok) throw new Error(`Failed to fetch portfolios: ${response.statusText}`);
+
+    const data = await response.json();
+    if (!data.data || data.data.length === 0) return [];
+
+    const portfolios = data.data.map((p: any) => processPortfolioData(p));
+    return portfolios.sort((a: Portfolio, b: Portfolio) => {
+      if (a.Big_project && !b.Big_project) return -1;
+      if (!a.Big_project && b.Big_project) return 1;
+      return a.id - b.id;
+    });
   } catch (error) {
     console.error("❌ Error fetching portfolio projects:", error);
     return [];
@@ -244,9 +237,7 @@ export async function getPortfolioProjects(): Promise<Portfolio[]> {
 export async function getPortfolioBySlug(slug: string | number): Promise<Portfolio | null> {
   try {
     const allEndpoints = [
-      `${STRAPI_URL}/api/portfolios?populate=*&filters[slug][$eq]=${slug}`,
       `${STRAPI_URL}/api/portofolios?populate=*&filters[slug][$eq]=${slug}`,
-      `${STRAPI_URL}/api/portfolios?populate=*&filters[id][$eq]=${slug}`,
       `${STRAPI_URL}/api/portofolios?populate=*&filters[id][$eq]=${slug}`,
     ];
 
