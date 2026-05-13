@@ -26,7 +26,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
       options: {
         cacheName: "image-cache",
         expiration: {
-          maxEntries: 64,
+          maxEntries: 500,
           maxAgeSeconds: 7 * 24 * 60 * 60,
         },
       },

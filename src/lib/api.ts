@@ -20,7 +20,11 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
-  const finalUrl = url + (url.includes('?') ? '&' : '?') + 'ngrok-skip-browser-warning=true';
+      headers: {
+        'ngrok-skip-browser-warning': '69420',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)...',
+        ...options.headers,
+      },
 
   try {
     const response = await fetch(finalUrl, {
