@@ -20,19 +20,15 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
-      headers: {
-        'ngrok-skip-browser-warning': '69420',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)...',
-        ...options.headers,
-      },
-
   try {
-    const response = await fetch(finalUrl, {
+    const response = await fetch(url, {
       ...options,
       signal: controller.signal,
       headers: {
+        "ngrok-skip-browser-warning": "69420",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         ...options.headers,
-        'ngrok-skip-browser-warning': 'true',
       },
     });
     clearTimeout(timeoutId);
@@ -44,7 +40,9 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}) {
 }
 
 function normalizeImageUrl(imagePath: string): string {
-  if (!imagePath) return "";
+  if (!imagePath) {
+    return "/placeholder.jpg";
+  }
   if (imagePath.startsWith("http")) return imagePath;
   return `${STRAPI_URL}${imagePath}`;
 }
@@ -59,15 +57,17 @@ export async function getBanners(): Promise<Banner[]> {
       `${STRAPI_URL}/api/hero-banner-kategoris?populate=*`,
       { next: { revalidate: 300 } }
     );
-    if (!response.ok) throw new Error(`Failed to fetch banners: ${response.statusText}`);
+    if (!response.ok)
+      throw new Error(`Failed to fetch banners: ${response.statusText}`);
     const json: StrapiBannerResponse = await response.json();
+    console.log("✅ Banner data:", json);
     if (!json.data?.[0]?.images) return [];
     return json.data[0].images.map((image) => ({
       id: image.id,
       imageUrl: normalizeImageUrl(image.url),
     }));
   } catch (error) {
-    console.error("Error fetching banners:", error);
+    console.error("❌ Error fetching banners:", error);
     return [];
   }
 }
@@ -82,8 +82,10 @@ export async function getCategories(): Promise<Category[]> {
       `${STRAPI_URL}/api/categories?populate[image]=true&populate[children][populate][0]=image&populate[parent]=true`,
       { next: { revalidate: 300 } }
     );
-    if (!response.ok) throw new Error(`Failed to fetch categories: ${response.statusText}`);
+    if (!response.ok)
+      throw new Error(`Failed to fetch categories: ${response.statusText}`);
     const json: StrapiCategoryResponse = await response.json();
+    console.log("✅ Categories data:", json);
     if (!json.data || json.data.length === 0) return [];
 
     const allCategories: Category[] = json.data.map((category) => {
@@ -95,7 +97,9 @@ export async function getCategories(): Promise<Category[]> {
         childrenArray = rawChildren.map((child) => ({
           id: child.id,
           name: child.name,
-          imageUrl: child.image?.url ? normalizeImageUrl(child.image.url) : "/placeholder-category.jpg",
+          imageUrl: child.image?.url
+            ? normalizeImageUrl(child.image.url)
+            : "/placeholder-category.jpg",
           children: [],
           parent: { id: category.id, name: category.name },
         }));
@@ -103,15 +107,26 @@ export async function getCategories(): Promise<Category[]> {
       return {
         id: category.id,
         name: category.name,
-        imageUrl: category.image?.url ? normalizeImageUrl(category.image.url) : "/placeholder-category.jpg",
+        imageUrl: category.image?.url
+          ? normalizeImageUrl(category.image.url)
+          : "/placeholder-category.jpg",
         children: childrenArray,
-        parent: category.parent ? { id: category.parent.id, name: category.parent.name } : null,
+        parent: category.parent
+          ? { id: category.parent.id, name: category.parent.name }
+          : null,
       };
     });
 
     const ORDER = [
-      "KARPET CUSTOM", "SAJADAH ROLL", "KARPET TILE", "KARPET METERAN",
-      "ANEKA SAJADAH", "PERMADANI", "WALLPAPER", "FIBERGLASS", "INTERIOR",
+      "KARPET CUSTOM",
+      "SAJADAH ROLL",
+      "KARPET TILE",
+      "KARPET METERAN",
+      "ANEKA SAJADAH",
+      "PERMADANI",
+      "WALLPAPER",
+      "FIBERGLASS",
+      "INTERIOR",
     ];
     allCategories.sort((a, b) => {
       const posA = ORDER.indexOf(a.name.toUpperCase());
@@ -130,7 +145,9 @@ export async function getCategories(): Promise<Category[]> {
 // PRODUCTS
 // ===============================================
 
-export async function getProductsByCategory(categoryName: string): Promise<Product[]> {
+export async function getProductsByCategory(
+  categoryName: string
+): Promise<Product[]> {
   try {
     const query = new URLSearchParams({
       populate: "*",
@@ -141,24 +158,35 @@ export async function getProductsByCategory(categoryName: string): Promise<Produ
       `${STRAPI_URL}/api/products?${query}`,
       { next: { revalidate: 60 } }
     );
-    if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
+    if (!response.ok)
+      throw new Error(`Failed to fetch products: ${response.statusText}`);
     const json: StrapiProductListResponse = await response.json();
+    console.log("✅ Products data:", json);
     if (!json.data || json.data.length === 0) return [];
     return json.data.map((product) => ({
       id: product.id,
       name: product.name || "Untitled Product",
       description: product.deskripsi || null,
-      images: product.images?.map((img) => ({ id: img.id, url: normalizeImageUrl(img.url) })) || [],
+      images:
+        product.images?.map((img) => ({
+          id: img.id,
+          url: normalizeImageUrl(img.url),
+        })) || [],
       categories: product.categories || [],
       isBestSeller: product.isBestSeller === true,
     }));
   } catch (error) {
-    console.error(`❌ Error fetching products for category ${categoryName}:`, error);
+    console.error(
+      `❌ Error fetching products for category ${categoryName}:`,
+      error
+    );
     return [];
   }
 }
 
-export async function getProductById(id: string | number): Promise<Product | null> {
+export async function getProductById(
+  id: string | number
+): Promise<Product | null> {
   try {
     const query = new URLSearchParams({
       "filters[id][$eq]": String(id),
@@ -168,15 +196,21 @@ export async function getProductById(id: string | number): Promise<Product | nul
       `${STRAPI_URL}/api/products?${query}`,
       { next: { revalidate: 300 } }
     );
-    if (!response.ok) throw new Error(`Failed to fetch product: ${response.statusText}`);
+    if (!response.ok)
+      throw new Error(`Failed to fetch product: ${response.statusText}`);
     const json: StrapiProductListResponse = await response.json();
+    console.log("✅ Product by ID data:", json);
     if (!json.data || json.data.length === 0) return null;
     const p = json.data[0];
     return {
       id: p.id,
       name: p.name || "Untitled Product",
       description: p.deskripsi || null,
-      images: p.images?.map((img) => ({ id: img.id, url: normalizeImageUrl(img.url) })) || [],
+      images:
+        p.images?.map((img) => ({
+          id: img.id,
+          url: normalizeImageUrl(img.url),
+        })) || [],
       categories: p.categories || [],
       isBestSeller: p.isBestSeller === true,
     };
@@ -194,7 +228,9 @@ function processPortfolioData(project: any): Portfolio {
   const images: string[] = [];
 
   if (project.pict) {
-    const pictArray = Array.isArray(project.pict) ? project.pict : [project.pict];
+    const pictArray = Array.isArray(project.pict)
+      ? project.pict
+      : [project.pict];
     pictArray.forEach((pic: any) => {
       if (pic?.url) images.push(normalizeImageUrl(pic.url));
     });
@@ -221,9 +257,11 @@ export async function getPortfolioProjects(): Promise<Portfolio[]> {
       { next: { revalidate: 600 } }
     );
 
-    if (!response.ok) throw new Error(`Failed to fetch portfolios: ${response.statusText}`);
+    if (!response.ok)
+      throw new Error(`Failed to fetch portfolios: ${response.statusText}`);
 
     const data = await response.json();
+    console.log("✅ Portfolio projects data:", data);
     if (!data.data || data.data.length === 0) return [];
 
     const portfolios = data.data.map((p: any) => processPortfolioData(p));
@@ -238,7 +276,9 @@ export async function getPortfolioProjects(): Promise<Portfolio[]> {
   }
 }
 
-export async function getPortfolioBySlug(slug: string | number): Promise<Portfolio | null> {
+export async function getPortfolioBySlug(
+  slug: string | number
+): Promise<Portfolio | null> {
   try {
     const allEndpoints = [
       `${STRAPI_URL}/api/portofolios?populate=*&filters[slug][$eq]=${slug}`,
@@ -247,12 +287,17 @@ export async function getPortfolioBySlug(slug: string | number): Promise<Portfol
 
     for (const endpoint of allEndpoints) {
       try {
-        const response = await fetchWithTimeout(endpoint, { next: { revalidate: 300 } });
+        const response = await fetchWithTimeout(endpoint, {
+          next: { revalidate: 300 },
+        });
         if (response.ok) {
           const data = await response.json();
-          if (data.data && data.data.length > 0) return processPortfolioData(data.data[0]);
+          console.log("✅ Portfolio by slug data:", data);
+          if (data.data && data.data.length > 0)
+            return processPortfolioData(data.data[0]);
         }
       } catch (err) {
+        console.error("❌ Error trying endpoint:", endpoint);
         continue;
       }
     }
